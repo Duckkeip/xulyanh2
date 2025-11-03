@@ -68,8 +68,9 @@ def create_gif(images, fps=10, effect='none', inter_frames=0, watermark_text=Non
         format="GIF",
         save_all=True,
         append_images=final_frames[1:],
-        duration=duration_ms,
-        loop=0
+        loop=0,
+        optimize=True,  # nén palette
+        duration=int(1000 / fps),
     )
     buffer.seek(0)
     return buffer
@@ -131,7 +132,7 @@ def extract_frames_from_video(video_path: str, target_fps: int, max_duration: fl
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise IOError("Không thể mở video.")
-    orig_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    orig_fps =  min(10, cap.get(cv2.CAP_PROP_FPS))  # giảm FPS xuống 10
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     orig_duration = frame_count / orig_fps if orig_fps > 0 else 0
     duration = min(orig_duration, max_duration)

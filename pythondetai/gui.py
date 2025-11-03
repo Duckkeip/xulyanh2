@@ -1,18 +1,15 @@
 # gui.py
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-from PIL import Image, ImageTk
+from PIL import Image as PILImage, ImageTk, Image
 from processor import load_images
-from animator import create_gif, create_video, extract_frames_from_video, create_gif_from_video
-from io import BytesIO
+from animator import create_gif, create_video, extract_frames_from_video
 import cv2
 import threading
 import time
 import os
 
 MAX_EXTRACT_SECONDS = 15.0
-MAX_GIF_DURATION = 15.0  # clamp GIF length to avoid huge outputs
-
 
 class GifApp:
     def __init__(self):
@@ -26,7 +23,6 @@ class GifApp:
         self.gif_frames = []
         self.gif_index = 0
         self.playing = False
-        self.last_gif_buffer = None  # BytesIO of last generated gif (from images or from video)
 
         # Video preview variables
         self.video_running = False
@@ -41,12 +37,13 @@ class GifApp:
         self.create_widgets()
 
     def create_widgets(self):
-        notebook = ttk.Notebook(self.root)
-        notebook.pack(fill="both", expand=True, padx=10, pady=10)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
+
 
         # Tab 1: GIF & Video Creator
-        tab1 = tk.Frame(notebook, bg="#f7f7f7")
-        notebook.add(tab1, text="GIF & Video Creator")
+        tab1 = tk.Frame(self.notebook, bg="#f7f7f7")
+        self.notebook.add(tab1, text="GIF & Video Creator")
 
         # Control frame
         control_frame = tk.Frame(tab1, bg="#f7f7f7")
@@ -54,13 +51,11 @@ class GifApp:
 
         tk.Button(control_frame, text="📁 Chọn ảnh", command=self.upload_images, width=14).grid(row=0, column=0, padx=6)
         tk.Button(control_frame, text="🎞️ Xem GIF", command=self.preview_gif, width=14).grid(row=0, column=1, padx=6)
-        tk.Button(control_frame, text="💾 Lưu GIF", command=self.save_gif, width=14).grid(row=0, column=2, padx=6)
-        # Keep existing Tạo Video button
-        tk.Button(control_frame, text="🎬 Tạo Video", command=self.create_video_preview, width=14).grid(row=0, column=3, padx=6)
-        # New: create GIF from video (choose file + popup A/B)
-        tk.Button(control_frame, text="🎬 Tạo GIF từ Video", command=self.start_create_gif_from_video_flow, width=16).grid(row=0, column=4, padx=6)
-        tk.Button(control_frame, text="🧹 Xóa danh sách", command=self.clear_list, width=12).grid(row=0, column=5, padx=6)
 
+        tk.Button(control_frame, text="💾 Lưu GIF", command=self.save_gif, width=14).grid(row=0, column=2, padx=6)
+        tk.Button(control_frame, text="🎬 Tạo Video", command=self.create_video_preview, width=14).grid(row=0, column=3, padx=6)
+        tk.Button(control_frame, text="🎥 Tạo GIF từ Video", command=self.open_video_to_gif_dialog, width=16).grid(row=0, column=4,padx=6)
+        tk.Button(control_frame, text="🧹 Xóa danh sách", command=self.clear_list, width=12).grid(row=0, column=5, padx=6)
         # Options
         options_frame = tk.Frame(tab1, bg="#f7f7f7")
         options_frame.pack(pady=6, fill="x", padx=20)
@@ -87,24 +82,26 @@ class GifApp:
         self.preview_canvas.create_window((0,0), window=self.thumb_frame, anchor="nw")
         self.thumb_frame.bind("<Configure>", lambda e: self.preview_canvas.configure(scrollregion=self.preview_canvas.bbox("all")))
 
-        # GIF + Video preview area
+        # GIF + Logo luôn hiển thị
         preview_area = tk.Frame(tab1, bg="#f7f7f7")
         preview_area.pack(pady=10, fill="both", expand=True)
 
         # Khung xem GIF bên trái
-        self.gif_canvas = tk.Label(preview_area, bg="#e0e0e0", width=560, height=420, text="(Chưa có GIF)")
+        self.gif_canvas = tk.Canvas(preview_area, bg="#e0e0e0", width=560, height=420, highlightthickness=0)
         self.gif_canvas.grid(row=0, column=0, padx=12, pady=8, sticky="nsew")
 
-        # Khung xem video bên phải
-        right_preview = tk.Frame(preview_area, bg="#f7f7f7")
-        right_preview.grid(row=0, column=1, sticky="nsew", padx=6)
-        self.video_canvas = tk.Label(right_preview, bg="#ddd", width=560, height=420, text="(Chưa có video)", relief="sunken")
-        self.video_canvas.pack(padx=6, pady=6)
+        self.gif_from_video_canvas = tk.Canvas(preview_area, bg="#d9d9d9", width=560, height=420, highlightthickness=0)
+
+        self.gif_from_video_canvas.grid(row=0, column=1, padx=12, pady=8, sticky="nsew")
+
+        preview_area.grid_rowconfigure(0, weight=1)
+        preview_area.grid_columnconfigure(0, weight=1)
+        preview_area.grid_columnconfigure(1, weight=1)
 
         # ------------------------
         # Tab 2: Import Video -> Extract Frames
-        tab2 = tk.Frame(notebook, bg="#f7f7f7")
-        notebook.add(tab2, text="Import Video → Extract Frames")
+        tab2 = tk.Frame(self.notebook, bg="#f7f7f7")
+        self.notebook.add(tab2, text="Import Video → Extract Frames")
 
         # Controls for import tab
         vctrl = tk.Frame(tab2, bg="#f7f7f7")
@@ -112,7 +109,7 @@ class GifApp:
         tk.Button(vctrl, text="📁 Chọn Video", command=self.select_import_video, width=16).grid(row=0, column=0, padx=6)
         tk.Label(vctrl, text="Target FPS:", bg="#f7f7f7").grid(row=0, column=1, sticky="w")
         self.target_fps_var = tk.IntVar(value=24)
-        ttk.Combobox(vctrl, textvariable=self.target_fps_var, values=(12,24,60), width=6, state="readonly").grid(row=0, column=2, padx=6)
+        ttk.Combobox(vctrl, textvariable=self.target_fps_var, values=(1,2,10,12,24,60), width=6, state="readonly").grid(row=0, column=2, padx=6)
         tk.Label(vctrl, text="Thời lượng (giây, ≤15):", bg="#f7f7f7").grid(row=0, column=3, sticky="w")
         self.extract_duration_var = tk.IntVar(value=5)
         tk.Spinbox(vctrl, from_=1, to=int(MAX_EXTRACT_SECONDS), textvariable=self.extract_duration_var, width=6).grid(row=0, column=4, padx=6)
@@ -133,6 +130,8 @@ class GifApp:
         self.extract_thumb_frame = tk.Frame(self.extract_canvas, bg="#fff")
         self.extract_canvas.create_window((0,0), window=self.extract_thumb_frame, anchor="nw")
         self.extract_thumb_frame.bind("<Configure>", lambda e: self.extract_canvas.configure(scrollregion=self.extract_canvas.bbox("all")))
+
+        self.gif_canvas.bind("<Button-1>", lambda e: self.toggle_gif())
 
     # ----------------- Tab1 functions (GIF/Video) -----------------
     def upload_images(self):
@@ -158,73 +157,112 @@ class GifApp:
         self.preview_canvas.configure(scrollregion=self.preview_canvas.bbox("all"))
 
     def preview_gif(self):
+        import io
+        from PIL import Image, ImageTk
+
         if not self.image_paths:
             messagebox.showwarning("Chưa chọn ảnh", "Vui lòng chọn ít nhất 1 ảnh.")
+            return
+
+        # --- Tạo GIF trong bộ nhớ ---
+        try:
+            images = load_images(self.image_paths)
+            gif_buffer = create_gif(
+                images,
+                fps=self.fps_var.get(),
+                effect=self.effect_var.get(),
+                inter_frames=self.inter_var.get()
+            )
+        except Exception as e:
+            messagebox.showerror("Lỗi tạo GIF", f"Lỗi: {e}")
+            return
+
+        gif_buffer.seek(0)
+        gif = Image.open(io.BytesIO(gif_buffer.read()))
+
+        # --- Đọc các frame GIF ---
+        frames = []
+        try:
+            while True:
+                frame = gif.copy().convert("RGBA")
+                frame.thumbnail((540, 420))
+                frames.append(ImageTk.PhotoImage(frame))
+                gif.seek(gif.tell() + 1)
+        except EOFError:
+            pass
+
+        if not frames:
+            messagebox.showwarning("Không có frame", "Không thể hiển thị GIF.")
+            return
+
+        # --- Tạo tab mới trong Notebook ---
+        tab_name = f"GIF Preview {len(self.notebook.tabs())}"
+        gif_tab = tk.Frame(self.notebook, bg="#f7f7f7")
+        self.notebook.add(gif_tab, text=tab_name)
+
+        # ✅ 👉 NÚT ĐÓNG TAB nằm NGAY SAU KHI TẠO TAB
+        btn_close = tk.Button(
+            gif_tab,
+            text="❌ Đóng tab này",
+            command=lambda: self.notebook.forget(gif_tab),
+            bg="#ffcccc",
+            relief="ridge"
+        )
+        btn_close.pack(pady=6)
+
+        # --- Khung hiển thị GIF ---
+        canvas = tk.Canvas(gif_tab, bg="#e0e0e0", width=560, height=420, highlightthickness=0)
+        canvas.pack(padx=20, pady=10, expand=True)
+
+        # --- Phát GIF ---
+        def draw_frame(index=0):
+            if not frames:
+                return
+            frame = frames[index]
+            canvas.delete("all")
+            canvas.create_image(280, 210, image=frame)
+            canvas.image = frame
+            delay = max(50, int(1000 / max(1, self.fps_var.get())))
+            gif_tab.after(delay, lambda: draw_frame((index + 1) % len(frames)))
+
+        draw_frame()
+        self.notebook.select(gif_tab)
+
+    def _draw_gif_frame(self):
+        if not self.playing or not self.gif_frames:
+            return
+
+        frame = self.gif_frames[self.gif_index]
+        self.gif_canvas.delete("all")
+        self.gif_canvas.create_image(280, 210, image=frame)
+        self.gif_canvas.image = frame  # tránh bị GC xoá
+
+        self.gif_index = (self.gif_index + 1) % len(self.gif_frames)
+        delay = max(50, int(1000 / max(1, self.fps_var.get())))
+        self.root.after(delay, self._draw_gif_frame)
+
+    def _play_gif_loop(self):
+        if not self.playing or not getattr(self, "gif_frames", None):
+            return
+        frame = self.gif_frames[self.gif_index]
+        self.gif_canvas.config(image=frame)
+        self.gif_canvas.image = frame
+        self.gif_index = (self.gif_index + 1) % len(self.gif_frames)
+        delay = max(50, int(1000 / max(1, self.fps_var.get())))
+        self.root.after(delay, self._play_gif_loop)
+
+    def save_gif(self):
+        if not self.image_paths:
+            messagebox.showwarning("Chưa chọn ảnh", "Vui lòng chọn ảnh trước.")
+            return
+        save_path = filedialog.asksaveasfilename(defaultextension=".gif", filetypes=[("GIF files", "*.gif")])
+        if not save_path:
             return
         images = load_images(self.image_paths)
         try:
             gif_buffer = create_gif(images, fps=self.fps_var.get(), effect=self.effect_var.get(), inter_frames=self.inter_var.get())
-        except Exception as e:
-            messagebox.showerror("Lỗi tạo GIF", str(e))
-            return
-        self.last_gif_buffer = gif_buffer
-        self._show_gif_buffer_on_canvas(gif_buffer)
-
-    def _show_gif_buffer_on_canvas(self, gif_buffer: BytesIO):
-        # Load and play GIF from BytesIO
-        self.gif_frames = []
-        from PIL import Image as PILImage
-        try:
-            gif = PILImage.open(gif_buffer)
-            while True:
-                f = gif.copy()
-                f.thumbnail((540,420))
-                self.gif_frames.append(ImageTk.PhotoImage(f.convert("RGBA")))
-                gif.seek(len(self.gif_frames))
-        except EOFError:
-            pass
-        except Exception as e:
-            messagebox.showerror("Lỗi đọc GIF", str(e))
-            return
-
-        if self.gif_frames:
-            self.gif_index = 0
-            self.playing = True
-            self._play_gif_loop()
-        else:
-            messagebox.showinfo("Không có khung", "Không thể tạo khung GIF để xem trước.")
-
-    def _play_gif_loop(self):
-        if not self.playing or not self.gif_frames:
-            return
-        frame = self.gif_frames[self.gif_index]
-        self.gif_canvas.config(image=frame, text="")
-        self.gif_canvas.image = frame
-        self.gif_index = (self.gif_index + 1) % len(self.gif_frames)
-        ms = max(20, int(1000 / max(1, self.fps_var.get())))
-        self.root.after(ms, self._play_gif_loop)
-
-    def save_gif(self):
-        # Save the last generated GIF (either from images or from video)
-        if not self.last_gif_buffer:
-            # fallback to creating from current image_paths like before
-            if not self.image_paths:
-                messagebox.showwarning("Chưa chọn ảnh", "Vui lòng chọn ảnh trước hoặc tạo GIF từ video trước khi lưu.")
-                return
-            images = load_images(self.image_paths)
-            try:
-                gif_buffer = create_gif(images, fps=self.fps_var.get(), effect=self.effect_var.get(), inter_frames=self.inter_var.get())
-            except Exception as e:
-                messagebox.showerror("Lỗi tạo GIF", str(e))
-                return
-            self.last_gif_buffer = gif_buffer
-
-        save_path = filedialog.asksaveasfilename(defaultextension=".gif", filetypes=[("GIF files", "*.gif")])
-        if not save_path:
-            return
-        try:
             with open(save_path, "wb") as f:
-                f.write(self.last_gif_buffer.getvalue())
+                f.write(gif_buffer.getvalue())
             messagebox.showinfo("Thành công", f"Đã lưu GIF tại:\n{save_path}")
         except Exception as e:
             messagebox.showerror("Lỗi lưu GIF", str(e))
@@ -249,116 +287,267 @@ class GifApp:
         # Mở cửa sổ preview video riêng
         self.open_video_window(self.video_path)
 
-    # ----------------- New: create GIF from video flow -----------------
-    def start_create_gif_from_video_flow(self):
-        # 1) ask for video file
-        path = filedialog.askopenfilename(title="Chọn file video để tạo GIF", filetypes=[("Video files", "*.mp4 *.avi *.mov *.mkv *.webm"), ("All files", "*.*")])
-        if not path:
+    def open_video_window(self, video_path):
+        if not os.path.exists(video_path):
+            messagebox.showerror("Lỗi", "Không tìm thấy file video.")
             return
-        self.video_for_gif = path
-        # get duration
-        cap = cv2.VideoCapture(path)
-        if cap.isOpened():
-            fps = cap.get(cv2.CAP_PROP_FPS) or 0
-            frames = cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0
-            dur = frames / fps if fps > 0 else 0
-            cap.release()
-        else:
-            dur = 0
-        # open small dialog to choose A/B
-        self._open_gif_from_video_dialog(path, dur)
 
-    def _open_gif_from_video_dialog(self, video_path, duration):
         win = tk.Toplevel(self.root)
-        win.title("Tạo GIF từ Video")
-        win.geometry("460x220")
-        win.resizable(False, False)
+        win.title("Xem trước Video")
+        win.geometry("800x600")
+        win.config(bg="#222")
 
-        tk.Label(win, text=f"Video: {os.path.basename(video_path)}", anchor="w").pack(fill="x", padx=10, pady=(8,0))
-        tk.Label(win, text=f"Duration: {duration:.2f}s (max {MAX_GIF_DURATION}s)", anchor="w").pack(fill="x", padx=10, pady=(0,6))
+        video_label = tk.Label(win, bg="#000")
+        video_label.pack(padx=10, pady=10, fill="both", expand=True)
 
-        frm = tk.Frame(win)
-        frm.pack(padx=10, pady=6, fill="x")
+        controls = tk.Frame(win, bg="#333")
+        controls.pack(fill="x", pady=10)
 
-        tk.Label(frm, text="Start (s):").grid(row=0, column=0, sticky="w")
+        # Biến điều khiển video
+        cap = cv2.VideoCapture(video_path)
+        paused = False
+        running = True
+        speed_factor = 1.0  # tốc độ mặc định (1x)
+
+        # Nhãn hiển thị tốc độ
+        speed_label = tk.Label(controls, text="Tốc độ: 1.0x", bg="#333", fg="white", width=12)
+        speed_label.pack(side="right", padx=10)
+
+
+        def update_speed_label():
+            speed_label.config(text=f"Tốc độ: {speed_factor:.1f}x")
+
+        def play_video():
+            nonlocal paused
+            paused = False
+
+        def pause_video():
+            nonlocal paused
+            paused = True
+
+        def skip_video():
+            nonlocal cap
+            pos = cap.get(cv2.CAP_PROP_POS_MSEC)
+            cap.set(cv2.CAP_PROP_POS_MSEC, pos + 5000)
+
+        def toggle_fullscreen():
+            win.attributes("-fullscreen", not win.attributes("-fullscreen"))
+
+        def increase_speed():
+            nonlocal speed_factor
+            if speed_factor < 4.0:
+                speed_factor *= 2
+                update_speed_label()
+
+        def decrease_speed():
+            nonlocal speed_factor
+            if speed_factor > 0.25:
+                speed_factor /= 2
+                update_speed_label()
+
+        # Các nút điều khiển
+        tk.Button(controls, text="▶️ Phát", width=10, command=play_video).pack(side="left", padx=5)
+        tk.Button(controls, text="⏸ Tạm dừng", width=10, command=pause_video).pack(side="left", padx=5)
+        tk.Button(controls, text="⏩ Tua +5s", width=10, command=skip_video).pack(side="left", padx=5)
+        tk.Button(controls, text="⏪ 0.5x", width=8, command=decrease_speed).pack(side="left", padx=5)
+        tk.Button(controls, text="⏩ 2x", width=8, command=increase_speed).pack(side="left", padx=5)
+        tk.Button(controls, text="🔍 Phóng to", width=10, command=toggle_fullscreen).pack(side="right", padx=5)
+
+        def update_frame():
+            nonlocal running
+            if not running:
+                return
+            if not paused:
+                ret, frame = cap.read()
+                if not ret:
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # lặp lại
+                    ret, frame = cap.read()
+                if ret:
+                    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                    img = Image.fromarray(frame)
+                    img.thumbnail((760, 540))
+                    imgtk = ImageTk.PhotoImage(img)
+                    video_label.config(image=imgtk)
+                    video_label.image = imgtk
+
+            # Thay đổi tốc độ bằng cách điều chỉnh khoảng delay giữa các frame
+            delay = int(30 / speed_factor)  # 30ms là khoảng ~33fps
+            win.after(max(1, delay), update_frame)
+
+        def on_close():
+            nonlocal running
+            running = False
+            cap.release()
+            win.destroy()
+
+        win.protocol("WM_DELETE_WINDOW", on_close)
+        update_frame()
+
+    def open_video_to_gif_dialog(self):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("🎥 Tạo GIF từ Video")
+        dialog.geometry("900x600")
+        dialog.config(bg="#222")
+
+        # --- Biến lưu ---
+        video_path_var = tk.StringVar(value="")
         start_var = tk.DoubleVar(value=0.0)
-        start_entry = tk.Spinbox(frm, from_=0.0, to=max(0.0, duration), increment=0.1, textvariable=start_var, width=12)
-        start_entry.grid(row=0, column=1, padx=6)
+        end_var = tk.DoubleVar(value=0.0)
+        fps_var = tk.IntVar(value=10)
+        effect_var = tk.StringVar(value="none")
+        inter_var = tk.IntVar(value=0)
 
-        tk.Label(frm, text="End (s):").grid(row=1, column=0, sticky="w")
-        end_var = tk.DoubleVar(value=min(duration, 3.0))
-        end_entry = tk.Spinbox(frm, from_=0.0, to=max(0.0, duration), increment=0.1, textvariable=end_var, width=12)
-        end_entry.grid(row=1, column=1, padx=6)
+        # --- Thanh chọn video ---
+        top_frame = tk.Frame(dialog, bg="#333")
+        top_frame.pack(fill="x", pady=6)
+        tk.Button(top_frame, text="📁 Chọn Video", command=lambda: select_video(), width=14).pack(side="left", padx=8)
+        tk.Label(top_frame, textvariable=video_path_var, fg="white", bg="#333", wraplength=400).pack(side="left",
+                                                                                                     padx=8)
 
-        tk.Label(frm, text="FPS (out):").grid(row=2, column=0, sticky="w")
-        out_fps_var = tk.IntVar(value=self.fps_var.get())
-        tk.Spinbox(frm, from_=1, to=60, textvariable=out_fps_var, width=12).grid(row=2, column=1, padx=6)
+        # --- Vùng hiển thị video ---
+        video_frame = tk.Frame(dialog, bg="#000")
+        video_frame.pack(padx=8, pady=(8, 0), fill="x")
 
-        tk.Label(frm, text="Hiệu ứng:").grid(row=0, column=2, sticky="w")
-        eff = tk.StringVar(value=self.effect_var.get())
-        ttk.Combobox(frm, values=("none","fade","slide"), textvariable=eff, state="readonly", width=12).grid(row=0, column=3, padx=6)
+        video_label = tk.Label(video_frame, bg="#000", width=850, height=400)
+        video_label.pack()
 
-        tk.Label(frm, text="Khung trung gian:").grid(row=1, column=2, sticky="w")
-        inter_var_local = tk.IntVar(value=self.inter_var.get())
-        tk.Spinbox(frm, from_=0, to=30, textvariable=inter_var_local, width=12).grid(row=1, column=3, padx=6)
+        # --- Thanh kéo thời gian video ---
+        progress_var = tk.DoubleVar(value=0)
+        progress_scale = tk.Scale(dialog, from_=0, to=1, orient="horizontal", resolution=0.1,
+                                  variable=progress_var, length=850, bg="#333", fg="white",
+                                  troughcolor="#666", highlightthickness=0)
+        progress_scale.pack(pady=(0, 8))
 
-        status_label = tk.Label(win, text="", anchor="w")
-        status_label.pack(fill="x", padx=10, pady=(4,0))
+        # --- Thanh trượt chọn đoạn ---
+        slider_frame = tk.Frame(dialog, bg="#333")
+        slider_frame.pack(fill="x", pady=8)
 
-        btn_frame = tk.Frame(win)
-        btn_frame.pack(pady=8)
+        tk.Label(slider_frame, text="Chọn điểm A:", fg="white", bg="#333").grid(row=0, column=0)
+        start_scale = tk.Scale(slider_frame, from_=0, to=1, orient="horizontal", resolution=0.1,
+                               variable=start_var, length=300, bg="#333", fg="white")
+        start_scale.grid(row=0, column=1, padx=8)
 
-        def on_create():
+        tk.Label(slider_frame, text="Chọn điểm B:", fg="white", bg="#333").grid(row=1, column=0)
+        end_scale = tk.Scale(slider_frame, from_=0, to=1, orient="horizontal", resolution=0.1,
+                             variable=end_var, length=300, bg="#333", fg="white")
+        end_scale.grid(row=1, column=1, padx=8)
+
+        # --- Các tuỳ chọn hiệu ứng ---
+        opt_frame = tk.Frame(dialog, bg="#333")
+        opt_frame.pack(pady=6)
+
+        tk.Label(opt_frame, text="FPS:", bg="#333", fg="white").grid(row=0, column=0)
+        tk.Spinbox(opt_frame, from_=1, to=60, textvariable=fps_var, width=6).grid(row=0, column=1, padx=4)
+        tk.Label(opt_frame, text="Hiệu ứng:", bg="#333", fg="white").grid(row=0, column=2)
+        tk.OptionMenu(opt_frame, effect_var, "none", "fade", "slide").grid(row=0, column=3, padx=4)
+        tk.Label(opt_frame, text="Khung trung gian:", bg="#333", fg="white").grid(row=0, column=4)
+        tk.Spinbox(opt_frame, from_=0, to=30, textvariable=inter_var, width=6).grid(row=0, column=5, padx=4)
+
+        # --- Nút tạo GIF ---
+        tk.Button(dialog, text="🎞️ Tạo GIF", width=14, command=lambda: create_gif_from_video()).pack(pady=8)
+
+        # --- Các biến video ---
+        cap = None
+        running = False
+        duration = 0
+
+        def select_video():
+            nonlocal cap, running, duration
+            path = filedialog.askopenfilename(title="Chọn video", filetypes=[("Video", "*.mp4 *.avi *.mov *.mkv")])
+            if not path:
+                return
+            video_path_var.set(os.path.basename(path))
+            cap = cv2.VideoCapture(path)
+            if not cap.isOpened():
+                messagebox.showerror("Lỗi", "Không mở được video.")
+                return
+            fps = cap.get(cv2.CAP_PROP_FPS) or 25
+            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+            duration = frame_count / fps
+            start_scale.config(to=duration)
+            end_scale.config(to=duration)
+            end_scale.set(min(5, duration))
+
+            running = True
+            update_video()
+
+        def update_video():
+            nonlocal cap, running
+            if not running or cap is None:
+                return
+            ret, frame = cap.read()
+            if not ret:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                ret, frame = cap.read()
+            if ret:
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame)
+                img.thumbnail((850, 480))
+                imgtk = ImageTk.PhotoImage(img)
+                video_label.config(image=imgtk)
+                video_label.image = imgtk
+            dialog.after(40, update_video)
+            progress_var.set(cap.get(cv2.CAP_PROP_POS_MSEC) / 1000)
+
+        def create_gif_from_video():
+            nonlocal cap, duration
+            if not cap:
+                messagebox.showwarning("Chưa chọn video", "Vui lòng chọn video trước.")
+                return
+
+            start_sec = start_var.get()
+            end_sec = end_var.get()
+            if start_sec >= end_sec:
+                messagebox.showwarning("Sai khoảng", "Điểm A phải nhỏ hơn điểm B.")
+                return
+
+            save_path = filedialog.asksaveasfilename(defaultextension=".gif", filetypes=[("GIF", "*.gif")])
+            if not save_path:
+                return
+
+            cap.set(cv2.CAP_PROP_POS_MSEC, start_sec * 1000)
+            frames = []
+            fps = int(fps_var.get())
+            while cap.isOpened():
+                pos = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000
+                if pos > end_sec:
+                    break
+                ret, frame = cap.read()
+                if not ret:
+                    break
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                img = Image.fromarray(frame)
+                frames.append(img)
+            cap.release()
+
+            # Gọi create_gif
+            from processor import load_images
+            from animator import create_gif
             try:
-                s = float(start_entry.get())
-                e = float(end_entry.get())
-            except Exception:
-                messagebox.showerror("Lỗi", "Giá trị thời gian không hợp lệ.")
-                return
-            if s < 0: s = 0.0
-            if e <= s:
-                messagebox.showwarning("Khoảng thời gian không hợp lệ", "Thời điểm kết thúc phải lớn hơn thời điểm bắt đầu.")
-                return
-            # clamp length
-            if e - s > MAX_GIF_DURATION:
-                e = s + MAX_GIF_DURATION
-
-            status_label.config(text="Đang tạo GIF... (chạy nền, bạn có thể xem video bên phải)")
-            win.update_idletasks()
-
-            # If video preview not running, start it (play video while generating GIF)
-            if not self.video_running:
-                self.video_path = video_path
-                self.video_thread = threading.Thread(target=self._video_loop, daemon=True)
-                self.video_thread.start()
-
-            # run generation in background
-            t = threading.Thread(target=self._create_gif_from_video_thread, args=(video_path, s, e, int(out_fps_var.get()), eff.get(), int(inter_var_local.get()), status_label, win), daemon=True)
-            t.start()
-
-        tk.Button(btn_frame, text="Tạo GIF", command=on_create, width=12).pack(side="left", padx=8)
-        tk.Button(btn_frame, text="Hủy", command=win.destroy, width=12).pack(side="left", padx=8)
-
-    def _create_gif_from_video_thread(self, video_path, start_s, end_s, out_fps, effect, inter_frames, status_label, dialog_win):
-        try:
-            # use animator.create_gif_from_video (returns BytesIO)
-            buffer = create_gif_from_video(video_path, start_s, end_s, fps=out_fps, effect=effect, inter_frames=inter_frames, max_duration=MAX_GIF_DURATION)
-        except Exception as e:
-            self.root.after(0, lambda: messagebox.showerror("Lỗi tạo GIF từ video", str(e)))
-            self.root.after(0, lambda: status_label.config(text="Lỗi khi tạo GIF."))
-            return
-        # save buffer locally for preview & saving
-        self.last_gif_buffer = buffer
-        # update preview on main thread
-        self.root.after(0, lambda: self._show_gif_buffer_on_canvas(buffer))
-        self.root.after(0, lambda: status_label.config(text="Hoàn tất — GIF đã sẵn sàng."))
-        # optionally close dialog after short delay
-        # self.root.after(500, dialog_win.destroy)
+                gif_buffer = create_gif(frames, fps=fps, effect=effect_var.get(), inter_frames=inter_var.get())
+                with open(save_path, "wb") as f:
+                    f.write(gif_buffer.getvalue())
+                messagebox.showinfo("Thành công", f"Đã tạo GIF từ video:\n{save_path}")
+            except Exception as e:
+                messagebox.showerror("Lỗi tạo GIF", str(e))
+            try:
+                gif = PILImage.open(save_path)
+                frames_preview = []
+                while True:
+                    f = gif.copy()
+                    f.thumbnail((540, 420))
+                    frames_preview.append(ImageTk.PhotoImage(f.convert("RGBA")))
+                    gif.seek(len(frames_preview))
+            except EOFError:
+                pass
+            if frames_preview:
+                self.gif_from_video_canvas.config(image=frames_preview[0])
+                self.gif_from_video_canvas.image = frames_preview[0]
 
     # ----------------- Video preview (Tab1) -----------------
     def play_video(self):
         if not self.video_path or not os.path.exists(self.video_path):
-            messagebox.showinfo("Chưa có video", "Hãy tạo hoặc chọn video trước.")
+            messagebox.showinfo("Chưa có video", "Hãy tạo video trước.")
             return
         if self.video_running:
             self.video_paused = False
@@ -381,25 +570,23 @@ class GifApp:
                 continue
             ret, frame = cap.read()
             if not ret:
-                # loop to start
-                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                ret, frame = cap.read()
-                if not ret:
-                    break
+                break
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
             img.thumbnail((560,420))
             imgtk = ImageTk.PhotoImage(img)
             # update on main thread via .after
-            self.root.after(0, lambda im=imgtk: self._update_video_canvas(im))
+            self.video_canvas.after(0, lambda im=imgtk: self._update_video_canvas(im))
             # sleep according to original fps
             time.sleep(1.0 / max(1.0, orig_fps))
         cap.release()
         self.video_running = False
 
     def _update_video_canvas(self, imgtk):
-        # Replace image on video canvas
-        self.video_canvas.config(image=imgtk, text="")
+        for w in self.video_canvas.winfo_children():
+            w.destroy()
+            # Hiển thị khung hình video
+        self.video_canvas.config(image=imgtk)
         self.video_canvas.image = imgtk
 
     def pause_video(self):
@@ -413,6 +600,9 @@ class GifApp:
         if not self.video_running:
             self.play_video()
             return
+        # set flag to pause then reposition by reopening capture in thread loop - not trivial to do safely here
+        # For simplicity show message: skip implemented as restart from +5s when thread reads position
+        # We'll just pause and show info (robust seek needs more complex thread-safe design)
         self.video_paused = True
         messagebox.showinfo("Tua", "Tua hiện tại thực hiện bằng việc dừng rồi phát lại tại vị trí mong muốn (tạm thời giới hạn).")
 
@@ -423,9 +613,13 @@ class GifApp:
         self.image_paths = []
         for widget in self.thumb_frame.winfo_children():
             widget.destroy()
-        self.gif_canvas.config(image="", text="(Chưa có GIF)")
+        self.gif_canvas.config(image="", text="")
         self.video_canvas.config(image="", text="(Chưa có video)")
-        self.last_gif_buffer = None
+
+    def toggle_gif(self):
+        self.playing = not self.playing
+        if self.playing:
+            self._draw_gif_frame()
 
     # ----------------- Tab2 functions (Import video & extract) -----------------
     def select_import_video(self):
@@ -501,7 +695,6 @@ class GifApp:
 
     def run(self):
         self.root.mainloop()
-
 
 if __name__ == "__main__":
     app = GifApp()
