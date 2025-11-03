@@ -175,3 +175,63 @@ def extract_frames_from_video(video_path: str, target_fps: int, max_duration: fl
         "orig_fps": orig_fps,
         "orig_duration": orig_duration
     }
+
+# -------------------------
+# New helper: create GIF directly from a video segment (returns BytesIO)
+def create_gif_from_video(video_path: str, start_sec: float, end_sec: float, fps: int = 10, effect='none', inter_frames=0, max_duration: float = 15.0):
+    """
+    Extract frames from video between start_sec and end_sec at given fps,
+    then call create_gif(...) to produce a BytesIO buffer (GIF).
+    Returns BytesIO.
+    """
+    if not os.path.exists(video_path):
+        raise FileNotFoundError("Video không tồn tại.")
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise IOError("Không thể mở video.")
+    orig_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    orig_duration = frame_count / orig_fps if orig_fps > 0 else 0
+
+    # sanitize start/end
+    start = float(max(0.0, min(start_sec, orig_duration)))
+    end = float(max(start, min(end_sec, orig_duration)))
+    duration = min(end - start, max_duration)
+    if duration <= 0:
+        cap.release()
+        raise ValueError("Đoạn thời gian không hợp lệ hoặc bằng 0.")
+
+    # collect timestamps
+    step = 1.0 / float(max(1, fps))
+    timestamps = []
+    t = start
+    while t < start + duration - 1e-6:
+        timestamps.append(t)
+        t += step
+    if len(timestamps) == 0:
+        timestamps = [start]
+
+    frames = []
+    for ts in timestamps:
+        cap.set(cv2.CAP_PROP_POS_MSEC, ts * 1000.0)
+        ret, frame = cap.read()
+        if not ret:
+            # fallback by frame index
+            frame_index = int(min(math.floor(ts * orig_fps), frame_count - 1))
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_index)
+            ret, frame = cap.read()
+            if not ret:
+                continue
+        # convert BGR -> RGB and to PIL
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        pil_img = Image.fromarray(frame_rgb)
+        frames.append(pil_img)
+
+    cap.release()
+
+    if not frames:
+        raise ValueError("Không tìm thấy khung hợp lệ trong đoạn đã chọn.")
+
+    # create gif buffer using existing create_gif
+    buffer = create_gif(frames, fps=fps, effect=effect, inter_frames=inter_frames)
+    return buffer
