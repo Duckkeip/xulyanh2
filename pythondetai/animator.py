@@ -32,7 +32,7 @@ def _make_slide_frames(img1, img2, n):
         frames.append(canvas.convert("RGB"))
     return frames
 
-def create_gif(images, fps=10, effect='none', inter_frames=0, watermark_text=None, duration_ms=None):
+def create_gif(images, fps=60, effect='none', inter_frames=0, watermark_text=None, duration_ms=None):
     if len(images) < 1:
         raise ValueError("Cần ít nhất 1 ảnh.")
     if duration_ms is None:
@@ -190,7 +190,7 @@ def create_gif_from_video(video_path: str, start_sec: float, end_sec: float, fps
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
         raise IOError("Không thể mở video.")
-    orig_fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
+    orig_fps = cap.get(cv2.CAP_PROP_FPS) or 60.0
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
     orig_duration = frame_count / orig_fps if orig_fps > 0 else 0
 
