@@ -327,7 +327,7 @@ class GifApp:
             return
 
         win = tk.Toplevel(self.root)
-        win.title("Xem trước Video")
+        win.title("Xem Video đã lưu")
         win.geometry("800x600")
         win.config(bg="#222")
 

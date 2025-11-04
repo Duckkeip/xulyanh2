@@ -6,17 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="19180842-9c13-45d0-90f0-6c13bf0415c7" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/animator.py" beforeDir="false" afterPath="$PROJECT_DIR$/pythondetai/animator.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/baocaoN4.docx" beforeDir="false" afterPath="$PROJECT_DIR$/baocaoN4.docx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/pythondetai/gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/pythondetai/gui.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/save/Screenshot_83.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/save/Screenshot_84.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/save/Screenshot_85.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/save/Screenshot_86.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/save/Screenshot_87.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/save/Screenshot_88.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/temp_video.mp4" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/test_output.gif" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pythondetai/vid/videoplayback.mp4" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -70,7 +61,7 @@
       <workItem from="1762155605687" duration="3093000" />
       <workItem from="1762159436543" duration="406000" />
       <workItem from="1762176532115" duration="6247000" />
-      <workItem from="1762220756378" duration="13997000" />
+      <workItem from="1762220756378" duration="15252000" />
     </task>
     <servers />
   </component>
@@ -80,7 +71,7 @@
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/tieuluanxulyanh$gui.coverage" NAME="gui Coverage Results" MODIFIED="1762157643810" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
     <SUITE FILE_PATH="coverage/xulyanh2$main.coverage" NAME="main Coverage Results" MODIFIED="1762176725334" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
-    <SUITE FILE_PATH="coverage/xulyanh2$gui.coverage" NAME="gui Coverage Results" MODIFIED="1762235713845" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
+    <SUITE FILE_PATH="coverage/xulyanh2$gui.coverage" NAME="gui Coverage Results" MODIFIED="1762238487168" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
     <SUITE FILE_PATH="coverage/xulyanh2$animator.coverage" NAME="animator Coverage Results" MODIFIED="1762234493596" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
     <SUITE FILE_PATH="coverage/tieuluanxulyanh$main.coverage" NAME="main Coverage Results" MODIFIED="1762155959312" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
   </component>
