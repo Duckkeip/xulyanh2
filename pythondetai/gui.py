@@ -9,8 +9,6 @@ import threading
 import time
 import os
 
-
-
 MAX_EXTRACT_SECONDS = 15.0
 
 class GifApp:
