@@ -1,6 +1,6 @@
 # gui.py
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, ttk ,font
 from PIL import Image as PILImage, ImageTk, Image
 from processor import load_images
 from animator import create_gif, create_video, extract_frames_from_video
@@ -8,6 +8,8 @@ import cv2
 import threading
 import time
 import os
+
+
 
 MAX_EXTRACT_SECONDS = 15.0
 
@@ -18,6 +20,12 @@ class GifApp:
         self.root.title("GIF & Video Tool")
         self.root.geometry("1200x760")
         self.root.config(bg="#f7f7f7")
+
+        # tăng kích thước chữ
+        import tkinter.font as tkfont
+        default_font = font.nametofont("TkDefaultFont")
+        default_font.configure(family="Arial", size=13, weight="bold")
+        self.root.option_add("*Font", default_font)
 
         # Shared
         self.image_paths = []
@@ -451,7 +459,7 @@ class GifApp:
 
         dialog = tk.Toplevel(self.root)
         dialog.title("🎥 Tạo GIF từ Video")
-        dialog.geometry("960x750")
+        dialog.geometry("960x550")
         dialog.config(bg="#222")
 
         # 🔹 Tạo vùng có thể cuộn
