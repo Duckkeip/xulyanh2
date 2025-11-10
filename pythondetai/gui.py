@@ -454,6 +454,22 @@ class GifApp:
         dialog.geometry("960x750")
         dialog.config(bg="#222")
 
+        # 🔹 Tạo vùng có thể cuộn
+        canvas = tk.Canvas(dialog, bg="#222", highlightthickness=0)
+        scrollbar = tk.Scrollbar(dialog, orient="vertical", command=canvas.yview)
+        scrollable_frame = tk.Frame(canvas, bg="#222")
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
         # --- Biến lưu ---
         video_path_var = tk.StringVar(value="")
         start_var = tk.DoubleVar(value=0.0)
@@ -463,23 +479,22 @@ class GifApp:
         inter_var = tk.IntVar(value=0)
 
         # --- Thanh chọn video ---
-        top_frame = tk.Frame(dialog, bg="#333")
+        top_frame = tk.Frame(scrollable_frame, bg="#333")
         top_frame.pack(fill="x", pady=6)
         tk.Button(top_frame, text="📁 Chọn Video", command=lambda: select_video(), width=14).pack(side="left", padx=8)
         tk.Label(top_frame, textvariable=video_path_var, fg="white", bg="#333", wraplength=400).pack(side="left",
                                                                                                      padx=8)
 
         # --- Vùng hiển thị video ---
-        video_frame = tk.Frame(dialog, bg="#000")
+        video_frame = tk.Frame(scrollable_frame, bg="#000")
         video_frame.pack(padx=8, pady=(8, 0), fill="x")
-
         video_label = tk.Label(video_frame, bg="#000", width=850, height=400)
         video_label.pack()
 
         # --- Thanh kéo thời gian video ---
         progress_var = tk.DoubleVar(value=0)
         progress_scale = tk.Scale(
-            dialog,
+            scrollable_frame,
             from_=0,
             to=30,
             orient="horizontal",
@@ -497,16 +512,16 @@ class GifApp:
         progress_scale.bind("<ButtonRelease-1>", on_drag_end)
 
         # --- Hiển thị thời gian video ---
-        time_label = tk.Label(dialog, text="00:00 / 00:00", fg="white", bg="#222", font=("Consolas", 11))
+        time_label = tk.Label(scrollable_frame, text="00:00 / 00:00", fg="white", bg="#222", font=("Consolas", 11))
         time_label.pack(pady=(0, 4))
 
         # --- KHUNG NÚT PHÁT/TẠM DỪNG (thêm ngay sau thanh thời gian) ---
-        controls = tk.Frame(dialog, bg="#333")
+        controls = tk.Frame(scrollable_frame, bg="#333")
         controls.pack(pady=4)
         tk.Button(controls, text="▶️ Phát", width=10, command=lambda: play_video()).pack(side="left", padx=5)
         tk.Button(controls, text="⏸ Tạm dừng", width=10, command=lambda: pause_video()).pack(side="left", padx=5)
 
-        speed_frame = tk.Frame(dialog, bg="#333")
+        speed_frame = tk.Frame(scrollable_frame, bg="#333")
         speed_frame.pack(pady=8)
 
         btn_decrease = tk.Button(speed_frame, text="⏪ Giảm tốc", command=lambda: decrease_speed(), bg="#444",
@@ -521,7 +536,7 @@ class GifApp:
         btn_increase.pack(side="left", padx=5)
 
         # --- Thanh trượt chọn đoạn ---
-        slider_frame = tk.Frame(dialog, bg="#333")
+        slider_frame = tk.Frame(scrollable_frame, bg="#333")
         slider_frame.pack(fill="x", pady=8)
 
         tk.Label(slider_frame, text="Chọn điểm A:", fg="white", bg="#333").grid(row=0, column=0)
@@ -535,7 +550,7 @@ class GifApp:
         end_scale.grid(row=1, column=1, padx=8)
 
         # --- Nút tạo GIF ---
-        tk.Button(dialog, text="🎞️ Tạo GIF", width=14, command=lambda: create_gif_from_video()).pack(pady=8)
+        tk.Button(scrollable_frame, text="🎞️ Tạo GIF", width=14, command=lambda: create_gif_from_video()).pack(pady=8)
 
         # --- Các biến video ---
         cap = None
