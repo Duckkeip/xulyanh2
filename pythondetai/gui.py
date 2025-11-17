@@ -15,9 +15,11 @@ class GifApp:
     def __init__(self):
         self.gif_from_video_canvas = None
         self.root = tk.Tk()
-        self.root.title("GIF & Video Tool")
+        self.root.title("CHƯƠNG TRÌNH TẠO ẢNH ĐỘNG")
         self.root.geometry("1200x760")
         self.root.config(bg="#f7f7f7")
+
+        self.last_created_gif_path = None
 
         # tăng kích thước chữ
         import tkinter.font as tkfont
@@ -45,13 +47,47 @@ class GifApp:
 
         paused = False
 
+    def _update_extract_tab_preview(self):
+        """Cập nhật preview trong tab2 khi có GIF mới tạo từ video"""
+        if not hasattr(self, 'last_created_gif_path') or not self.last_created_gif_path:
+            return
+
+        try:
+            # Tạo thumbnail của GIF để hiển thị trong tab2
+            gif_img = Image.open(self.last_created_gif_path)
+            gif_img.thumbnail((200, 150))  # Kích thước nhỏ cho tab2
+
+            # Chuyển sang PhotoImage
+            gif_photo = ImageTk.PhotoImage(gif_img)
+
+            # Tìm hoặc tạo label để hiển thị GIF trong tab2
+            if not hasattr(self, 'extract_gif_label'):
+                # Tạo label mới nếu chưa có
+                self.extract_gif_label = tk.Label(self.extract_thumb_frame,
+                                                  bg="#fff",
+                                                  text="GIF từ video:",
+                                                  compound="top",
+                                                  font=("Arial", 9, "bold"))
+                self.extract_gif_label.grid(row=0, column=0, padx=6, pady=6, sticky="w")
+
+            # Cập nhật ảnh
+            self.extract_gif_label.config(image=gif_photo,
+                                          text=f"GIF từ video:\n{os.path.basename(self.last_created_gif_path)}")
+            self.extract_gif_label.image = gif_photo  # Giữ reference
+
+            print(f"Đã cập nhật preview trong tab2: {self.last_created_gif_path}")
+
+        except Exception as e:
+            print(f"Lỗi khi cập nhật preview tab2: {e}")
+
+
     def create_widgets(self):
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True, padx=10, pady=10)
 
         # Tab 1: GIF & Video Creator
         tab1 = tk.Frame(self.notebook, bg="#f7f7f7")
-        self.notebook.add(tab1, text="GIF & Video Creator")
+        self.notebook.add(tab1, text="MỤC TẠO GIF")
 
         # Control frame
         control_frame = tk.Frame(tab1, bg="#f7f7f7")
@@ -135,7 +171,7 @@ class GifApp:
         # ------------------------
         # Tab 2: Import Video -> Extract Frames
         tab2 = tk.Frame(self.notebook, bg="#f7f7f7")
-        self.notebook.add(tab2, text="Import Video → Extract Frames")
+        self.notebook.add(tab2, text="XUẤT ẢNH TỪ VIDEO")
 
         # Controls for import tab
         vctrl = tk.Frame(tab2, bg="#f7f7f7")
@@ -703,6 +739,9 @@ class GifApp:
                                         inter_frames=self.inter_var.get())
                 with open(save_path, "wb") as f:
                     f.write(gif_buffer.getvalue())
+
+                self.last_created_gif_path = save_path  # Lưu đường dẫn GIF vừa tạo
+                self._update_extract_tab_preview()
                 messagebox.showinfo("Thành công", f"Đã tạo GIF từ video:\n{save_path}")
             except Exception as e:
                 messagebox.showerror("Lỗi tạo GIF", str(e))
@@ -728,23 +767,25 @@ class GifApp:
                 self.gif_from_video_index = 0
 
                 def play_gif_video():
-
-                    if not hasattr(self, "gif_from_video_frames") or not self.gif_from_video_frames:
+                    if (not hasattr(self, "gif_from_video_frames") or
+                            not self.gif_from_video_frames or
+                            not self.gif_from_video_playing):
                         return
 
                     frame = self.gif_from_video_frames[self.gif_from_video_index]
                     self.gif_from_video_canvas.delete("all")
-                    self.gif_from_video_canvas.create_image(280, 200, image=frame)  # center canvas
+                    self.gif_from_video_canvas.create_image(280, 200, image=frame)
                     self.gif_from_video_canvas.image = frame
                     self.gif_from_video_index = (self.gif_from_video_index + 1) % len(self.gif_from_video_frames)
 
                     delay = max(50, int(1000 / fps))
+                    self.root.after(delay, play_gif_video)
 
-                    # Kiểm tra lại trước khi gọi after để tránh crash
-                    if hasattr(self, "gif_from_video_frames") and self.gif_from_video_frames:
-                        self.root.after(delay, play_gif_video)
-
+                self.gif_from_video_playing = True
+                self.gif_from_video_frames = frames_preview
+                self.gif_from_video_index = 0
                 play_gif_video()
+
     # ----------------- Video preview (Tab1) -----------------
     def play_video(self):
         if not self.video_path or not os.path.exists(self.video_path):
@@ -810,51 +851,42 @@ class GifApp:
     def toggle_fullscreen(self):
         self.root.attributes("-fullscreen", not self.root.attributes("-fullscreen"))
 
+    def stop_gif_animation(self):
+        """Dừng animation GIF từ ảnh"""
+        self.playing = False
+        self.gif_playing = False
+
+    def stop_gif_from_video_animation(self):
+        """Dừng animation GIF từ video"""
+        self.gif_from_video_playing = False
+
     def clear_list(self):
-        def __init__(self):
-            # ... các khởi tạo khác ...
-            self.gif_from_video_frames = []
-            self.gif_from_video_index = 0
-            self.gif_from_video_playing = False
-            self.gif_playing = False
+        # Dừng tất cả animation trước khi xóa
+        self.stop_gif_animation()
+        self.stop_gif_from_video_animation()
 
-        def stop_gif_animation(self):
-            """Dừng animation GIF từ ảnh"""
-            self.playing = False
-            self.gif_playing = False
+        # Xóa danh sách ảnh
+        self.image_paths = []
 
-        def stop_gif_from_video_animation(self):
-            """Dừng animation GIF từ video"""
-            self.gif_from_video_playing = False
+        # Xóa tất cả thumbnail nếu có
+        for widget in self.thumb_frame.winfo_children():
+            widget.destroy()
 
-        def clear_list(self):
-            # Dừng tất cả animation trước khi xóa
-            self.stop_gif_animation()
-            self.stop_gif_from_video_animation()
+        # Xóa GIF bên trái (GIF từ ảnh)
+        self.gif_canvas.delete("all")
+        self.gif_canvas.image = None
+        self.gif_canvas.create_text(280, 200, text="(Chưa có GIF)", fill="#333", font=("Arial", 12))
 
-            # Xóa danh sách ảnh
-            self.image_paths = []
+        # Xóa GIF bên phải (GIF từ video)
+        self.gif_from_video_canvas.delete("all")
+        self.gif_from_video_canvas.image = None
+        self.gif_from_video_canvas.create_text(280, 200, text="(Chưa có GIF từ video)", fill="#333", font=("Arial", 12))
 
-            # Xóa tất cả thumbnail nếu có
-            for widget in self.thumb_frame.winfo_children():
-                widget.destroy()
-
-            # Xóa GIF bên trái (GIF từ ảnh)
-            self.gif_canvas.delete("all")
-            self.gif_canvas.image = None
-            self.gif_canvas.create_text(280, 200, text="(Chưa có GIF)", fill="#333", font=("Arial", 12))
-
-            # Xóa GIF bên phải (GIF từ video)
-            self.gif_from_video_canvas.delete("all")
-            self.gif_from_video_canvas.image = None
-            self.gif_from_video_canvas.create_text(280, 200, text="(Chưa có GIF từ video)", fill="#333",
-                                                   font=("Arial", 12))
-
-            # Xóa các frame GIF lưu trong bộ nhớ
-            self.gif_frames = []
-            self.gif_from_video_frames = []
-            self.gif_index = 0
-            self.gif_from_video_index = 0
+        # Xóa các frame GIF lưu trong bộ nhớ
+        self.gif_frames = []
+        self.gif_from_video_frames = []
+        self.gif_index = 0
+        self.gif_from_video_index = 0
 
     def toggle_gif(self):
         self.playing = not self.playing
@@ -920,6 +952,8 @@ class GifApp:
     def _show_extracted_thumbnails(self, paths):
         for w in self.extract_thumb_frame.winfo_children():
             w.destroy()
+            # Xác định vị trí bắt đầu cho frames extract
+        start_col = 1 if hasattr(self, 'extract_gif_label') and self.extract_gif_label.winfo_ismapped() else 0
         for idx, p in enumerate(paths):
             try:
                 img = Image.open(p)
@@ -927,7 +961,7 @@ class GifApp:
                 tkimg = ImageTk.PhotoImage(img)
                 lbl = tk.Label(self.extract_thumb_frame, image=tkimg, bg="#fff")
                 lbl.image = tkimg
-                lbl.grid(row=0, column=idx, padx=6, pady=6)
+                lbl.grid(row=0, column=start_col + idx, padx=6, pady=6)
             except Exception as e:
                 print("Không thể mở thumb:", p, e)
         self.extract_thumb_frame.update_idletasks()
