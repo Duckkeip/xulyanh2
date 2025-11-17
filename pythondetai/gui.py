@@ -811,34 +811,50 @@ class GifApp:
         self.root.attributes("-fullscreen", not self.root.attributes("-fullscreen"))
 
     def clear_list(self):
-        # Xóa danh sách ảnh
-        self.image_paths = []
+        def __init__(self):
+            # ... các khởi tạo khác ...
+            self.gif_from_video_frames = []
+            self.gif_from_video_index = 0
+            self.gif_from_video_playing = False
+            self.gif_playing = False
 
-        # Xóa tất cả thumbnail nếu có
-        for widget in self.thumb_frame.winfo_children():
-            widget.destroy()
+        def stop_gif_animation(self):
+            """Dừng animation GIF từ ảnh"""
+            self.playing = False
+            self.gif_playing = False
 
-        # Xóa GIF bên trái (GIF từ ảnh)
-        self.gif_canvas.delete("all")
-        self.gif_canvas.image = None
-        self.gif_canvas.create_text(280, 200, text="(Chưa có GIF)", fill="#333", font=("Arial", 12))
+        def stop_gif_from_video_animation(self):
+            """Dừng animation GIF từ video"""
+            self.gif_from_video_playing = False
 
-        # Xóa GIF bên phải (GIF từ video)
-        self.gif_from_video_canvas.delete("all")
-        self.gif_from_video_canvas.image = None
-        self.gif_from_video_canvas.create_text(280, 200, text="(Chưa có GIF từ video)", fill="#333", font=("Arial", 12))
+        def clear_list(self):
+            # Dừng tất cả animation trước khi xóa
+            self.stop_gif_animation()
+            self.stop_gif_from_video_animation()
 
-        # Nếu bạn có video canvas riêng, cũng xóa luôn
-        if hasattr(self, "video_canvas"):
-            self.video_canvas.delete("all")
-            self.video_canvas.image = None
-            self.video_canvas.create_text(280, 200, text="(Chưa có video)", fill="#333", font=("Arial", 12))
+            # Xóa danh sách ảnh
+            self.image_paths = []
 
-        # Xóa các frame GIF lưu trong bộ nhớ (tránh loop còn chạy)
-        if hasattr(self, "gif_from_video_frames"):
-            del self.gif_from_video_frames
-        if hasattr(self, "gif_from_video_index"):
-            del self.gif_from_video_index
+            # Xóa tất cả thumbnail nếu có
+            for widget in self.thumb_frame.winfo_children():
+                widget.destroy()
+
+            # Xóa GIF bên trái (GIF từ ảnh)
+            self.gif_canvas.delete("all")
+            self.gif_canvas.image = None
+            self.gif_canvas.create_text(280, 200, text="(Chưa có GIF)", fill="#333", font=("Arial", 12))
+
+            # Xóa GIF bên phải (GIF từ video)
+            self.gif_from_video_canvas.delete("all")
+            self.gif_from_video_canvas.image = None
+            self.gif_from_video_canvas.create_text(280, 200, text="(Chưa có GIF từ video)", fill="#333",
+                                                   font=("Arial", 12))
+
+            # Xóa các frame GIF lưu trong bộ nhớ
+            self.gif_frames = []
+            self.gif_from_video_frames = []
+            self.gif_index = 0
+            self.gif_from_video_index = 0
 
     def toggle_gif(self):
         self.playing = not self.playing
