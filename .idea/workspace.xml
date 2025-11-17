@@ -5,7 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="19180842-9c13-45d0-90f0-6c13bf0415c7" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/xulyanh2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/xulyanh2.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/BaocaotieuluanPP.pptx" beforeDir="false" afterPath="$PROJECT_DIR$/BaocaotieuluanPP.pptx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/baocaotiendo_nhom04.docx" beforeDir="false" afterPath="$PROJECT_DIR$/baocaotiendo_nhom04.docx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pythondetai/gui.py" beforeDir="false" afterPath="$PROJECT_DIR$/pythondetai/gui.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -63,6 +68,7 @@
       <workItem from="1762783867576" duration="1186000" />
       <workItem from="1762786395877" duration="1429000" />
       <workItem from="1762953172345" duration="31000" />
+      <workItem from="1763360272863" duration="3375000" />
     </task>
     <servers />
   </component>
@@ -71,8 +77,8 @@
   </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
     <SUITE FILE_PATH="coverage/tieuluanxulyanh$gui.coverage" NAME="gui Coverage Results" MODIFIED="1762157643810" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
-    <SUITE FILE_PATH="coverage/xulyanh2$main.coverage" NAME="main Coverage Results" MODIFIED="1762176725334" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
-    <SUITE FILE_PATH="coverage/xulyanh2$gui.coverage" NAME="gui Coverage Results" MODIFIED="1762790001143" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
+    <SUITE FILE_PATH="coverage/xulyanh2$main.coverage" NAME="main Coverage Results" MODIFIED="1763361740337" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
+    <SUITE FILE_PATH="coverage/xulyanh2$gui.coverage" NAME="gui Coverage Results" MODIFIED="1763364093965" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
     <SUITE FILE_PATH="coverage/xulyanh2$animator.coverage" NAME="animator Coverage Results" MODIFIED="1762234493596" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
     <SUITE FILE_PATH="coverage/tieuluanxulyanh$main.coverage" NAME="main Coverage Results" MODIFIED="1762155959312" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/pythondetai" />
   </component>
