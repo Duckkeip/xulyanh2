@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="19180842-9c13-45d0-90f0-6c13bf0415c7" name="Changes" comment="" />
+    <list default="true" id="19180842-9c13-45d0-90f0-6c13bf0415c7" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/~$ocaotiendo_nhom04.docx" beforeDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -62,6 +64,7 @@
       <workItem from="1762786395877" duration="1429000" />
       <workItem from="1762953172345" duration="31000" />
       <workItem from="1763360272863" duration="7415000" />
+      <workItem from="1763613856047" duration="125000" />
     </task>
     <servers />
   </component>
